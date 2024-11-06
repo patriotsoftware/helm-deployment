@@ -75,7 +75,7 @@ runs:
       env:
         ADDITIONAL_ARGS: ${{inputs.additional-args }}
         ADDITIONAL_VALUES: ${{inputs.additional-values }}
-        BASE_CHART: "${{ inputs.target-directory }}/${{ inputs.base-chart }}"
+        BASE_CHART: "${{ inputs.target-directory }}/${{ steps.pull-chart.outputs.chart-path }}"
         NAMESPACE: ${{ inputs.namespace }}
         PRINT_TEMPLATE: ${{ inputs.print-template }}
         PROBLEMS_TIMEOUT: ${{ inputs.problems-timeout }}
