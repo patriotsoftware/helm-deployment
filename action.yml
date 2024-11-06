@@ -1,0 +1,84 @@
+name: Helm OCI Pull Action
+description: Pull a Helm chart from an OCI-compliant repository and save to a local directory
+
+inputs:
+  aws-access-key-id:
+    description: 'The AWS Access key for authentication.'
+    required: true
+  aws-secret-access-key:
+    description: 'The AWS Secret key for authentication.'
+    required: true
+  aws-region:
+    description: 'Region used for ECR login.'
+    required: false
+    default: us-east-1
+  base-chart:
+    description: 'Chart to deploy the service with.'
+    required: true
+  target-directory:
+    description: 'Target base directory to use when saving the chart locally. Will save to <target-directory>/<chart-name>.'
+    required: false
+    default: "./"
+  chart-version:
+    description: 'Helm Chart version.'
+    required: false
+  release-name:
+    description: 'Name of Helm Release.'
+    required: true
+  namespace:
+    description: 'Kubernetes Namespace for the deployment.'
+    required: true
+  values-file:
+    description: 'Location of values file for helm chart.'
+    required: true
+  additional-values:
+    description: 'Comma seperated string that contains extra values set for helm.'
+    required: false
+  additional-args:
+    description: 'Handles inline options such as atomic, or timeout. By default, atomic is enabled.'
+    required: false
+    default: '--atomic --timeout 2m30s'
+  problems-timeout:
+    description: 'Number of seconds to wait before checking potential issues (as an integer of seconds). Adding a value enables problem detection.'
+    required: false
+  print-template:
+    description: 'Allowed values are true/false. Determines whether or not to run "helm template" with the specified values. Defaults to true.'
+    required: false
+    default: "true"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Authenticate with AWS
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ inpust.aws-access-key-id }}
+        aws-secret-access-key: ${{ inpust.aws-secret-access-key }}
+        aws-region: ${{ inputs.aws-region }}
+
+    - name: Login to AWS ECR
+      id: login-source-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Pull Helm Chart
+      id: pull-chart
+      env:
+        BASE_CHART: ${{ inputs.base-chart }}
+        CHART_VERSION: ${{ inputs.chart-version }}
+        TARGET_DIRECTORY: ${{ inputs.target-directory }}
+      shell: bash
+      run: ${{ github.action_path }}/helm-chart-pull-action.sh
+
+    - name: Install/Upgrade Helm Chart
+      id: helm-upgrade-action
+      env:
+        ADDITIONAL_ARGS: ${{inputs.additional-args }}
+        ADDITIONAL_VALUES: ${{inputs.additional-values }}
+        BASE_CHART: "${{ inputs.target-directory }}/${{ inputs.base-chart }}"
+        NAMESPACE: ${{ inputs.namespace }}
+        PRINT_TEMPLATE: ${{ inputs.print-template }}
+        PROBLEMS_TIMEOUT: ${{ inputs.problems-timeout }}
+        RELEASE_NAME: ${{ inputs.release-name }}
+        VALUES_FILE: ${{ inputs.values-file }}
+      shell: bash
+      run: ${{ github.action_path }}/helm-upgrade-action.sh
