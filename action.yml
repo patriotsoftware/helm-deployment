@@ -1,5 +1,5 @@
-name: Helm OCI Pull Action
-description: Pull a Helm chart from an OCI-compliant repository and save to a local directory
+name: Helm Deployment Action
+description: 'Pull a Helm chart from an OCI-compliant repository and save to a local directory. Then deploy to Kubernetes using that chart and a specified values file.'
 
 inputs:
   aws-access-key-id:
