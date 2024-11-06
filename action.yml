@@ -1,4 +1,5 @@
 name: Helm Deployment Action
+author: DevOps
 description: 'Pull a Helm chart from an OCI-compliant repository and save to a local directory. Then deploy to Kubernetes using that chart and a specified values file.'
 
 inputs:
