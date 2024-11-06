@@ -15,14 +15,14 @@ then
     echo "✅ ${BASE_CHART} pulled successfully"
     echo "✅ ${BASE_CHART} saved to ${TARGET_DIRECTORY} successfully"
     CHART_PATH="$TARGET_DIRECTORY/$(ls $TARGET_DIRECTORY)"
-    echo "::set-output name=chart-path::${CHART_PATH}"
+    echo "##[set-output name=chart-path;]$(echo ${CHART_PATH})"
 else
     helm chart pull "${BASE_CHART}" 
     echo "✅ ${BASE_CHART} pulled successfully"
     helm chart export "${BASE_CHART}" --destination "${TARGET_DIRECTORY}"
     echo "✅ ${BASE_CHART} saved to ${TARGET_DIRECTORY} successfully"
     CHART_PATH="$TARGET_DIRECTORY/$(ls $TARGET_DIRECTORY)"
-    echo "::set-output name=chart-path::${CHART_PATH}"
+    echo "##[set-output name=chart-path;]$(echo ${CHART_PATH})"
 fi
 
 helm pull "oci://305628290583.dkr.ecr.us-east-1.amazonaws.com/monochart" --untar --untardir "./"

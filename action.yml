@@ -45,7 +45,7 @@ inputs:
   print-template:
     description: 'Allowed values are true/false. Determines whether or not to run "helm template" with the specified values. Defaults to true.'
     required: false
-    default: "true"
+    default: 'true'
 
 runs:
   using: "composite"
