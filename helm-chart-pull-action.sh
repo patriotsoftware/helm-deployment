@@ -14,11 +14,15 @@ then
     helm pull "oci://${BASE_CHART}" --untar --untardir "${TARGET_DIRECTORY}" $CHART_VERSION
     echo "✅ ${BASE_CHART} pulled successfully"
     echo "✅ ${BASE_CHART} saved to ${TARGET_DIRECTORY} successfully"
-    echo "::set-output name=chart-path::${TARGET_DIRECTORY}"
+    CHART_PATH="$TARGET_DIRECTORY/$(ls $TARGET_DIRECTORY)"
+    echo "::set-output name=chart-path::${CHART_PATH}"
 else
     helm chart pull "${BASE_CHART}" 
     echo "✅ ${BASE_CHART} pulled successfully"
     helm chart export "${BASE_CHART}" --destination "${TARGET_DIRECTORY}"
     echo "✅ ${BASE_CHART} saved to ${TARGET_DIRECTORY} successfully"
-    echo "::set-output name=chart-path::${TARGET_DIRECTORY}"
+    CHART_PATH="$TARGET_DIRECTORY/$(ls $TARGET_DIRECTORY)"
+    echo "::set-output name=chart-path::${CHART_PATH}"
 fi
+
+helm pull "oci://305628290583.dkr.ecr.us-east-1.amazonaws.com/monochart" --untar --untardir "./"
