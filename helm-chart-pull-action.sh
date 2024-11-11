@@ -5,5 +5,3 @@ set -e
 helm pull "oci://${BASE_CHART}" --untar --untardir "${TARGET_DIRECTORY}" -d "${CHART_DESTINATION}" $CHART_VERSION
 echo "✅ ${BASE_CHART} pulled successfully"
 echo "✅ ${BASE_CHART} saved to ${TARGET_DIRECTORY} successfully"
-CHART_PATH="$TARGET_DIRECTORY$(ls $TARGET_DIRECTORY)"
-echo "chart-path=$CHART_PATH" >> $GITHUB_OUTPUT
