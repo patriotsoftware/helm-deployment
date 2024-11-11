@@ -4,7 +4,7 @@ set -e
 
 mkdir -p $TARGET_DIRECTORY
 
-if [[ "${ls $TARGET_DIRECTORY}" != 1 ]]; then
+if [[ "${ls $TARGET_DIRECTORY | wc -l}" != "0" ]]; then
     echo "The target directory was not empty: $TARGET_DIRECTORY"
     exit 1
 fi
