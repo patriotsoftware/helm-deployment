@@ -17,7 +17,7 @@ inputs:
     description: 'Chart to deploy the service with.'
     required: true
   target-directory:
-    description: 'Target base directory to use when saving the chart locally. Will save to <target-directory>/helm-chart.'
+    description: 'Target directory to save the chart to. This needs to be an empty directory so the chart can be specified automatically. Will save to ./helm-chart/<chart name>.'
     required: false
     default: './helm-chart/'
   chart-version:
