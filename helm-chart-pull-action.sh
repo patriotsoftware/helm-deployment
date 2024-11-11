@@ -3,8 +3,8 @@ export HELM_EXPERIMENTAL_OCI=1
 set -e
 
 mkdir -p $TARGET_DIRECTORY
-
-if [[ "${ls $TARGET_DIRECTORY | wc -l}" != "0" ]]; then
+DIRECTORY_SIZE=$(ls $TARGET_DIRECTORY | wc -l)
+if [[ "$DIRECTORY_SIZE" != "0" ]]; then
     echo "The target directory was not empty: $TARGET_DIRECTORY"
     exit 1
 fi
