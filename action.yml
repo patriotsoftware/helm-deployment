@@ -67,7 +67,13 @@ runs:
         CHART_VERSION: ${{ inputs.chart-version }}
         TARGET_DIRECTORY: ${{ inputs.target-directory }}
       shell: bash
-      run: ${{ github.action_path }}/helm-chart-pull-action.sh
+      # run: ${{ github.action_path }}/helm-chart-pull-action.sh
+      run: |
+        helm pull "oci://${BASE_CHART}" --untar --untardir "${TARGET_DIRECTORY}" $CHART_VERSION
+        echo "✅ ${BASE_CHART} pulled successfully"
+        echo "✅ ${BASE_CHART} saved to ${TARGET_DIRECTORY} successfully"
+        CHART_PATH="$TARGET_DIRECTORY$(ls $TARGET_DIRECTORY)"
+        echo "chart-path=$CHART_PATH" >> $GITHUB_OUTPUT
 
     - name: Install/Upgrade Helm Chart
       id: helm-upgrade-action
