@@ -79,7 +79,7 @@ runs:
       env:
         ADDITIONAL_ARGS: ${{inputs.additional-args }}
         ADDITIONAL_VALUES: ${{inputs.additional-values }}
-        HELM_CHART: ${{ inputs.chart-destination }}
+        HELM_CHART: "${{ inputs.target-directory }}${{ inputs.chart-destination }}"
         NAMESPACE: ${{ inputs.namespace }}
         PRINT_TEMPLATE: ${{ inputs.print-template }}
         PROBLEMS_TIMEOUT: ${{ inputs.problems-timeout }}
