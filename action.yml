@@ -38,7 +38,6 @@ inputs:
   additional-args:
     description: 'Handles inline options such as atomic, or timeout. By default, atomic is enabled.'
     required: false
-    default: '--atomic --timeout 2m30s'
   problems-timeout:
     description: 'Number of seconds to wait before checking potential issues (as an integer of seconds). Adding a value enables problem detection.'
     required: false
