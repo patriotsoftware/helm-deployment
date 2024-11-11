@@ -20,10 +20,6 @@ inputs:
     description: 'Target base directory to use when saving the chart locally. Will save to <target-directory>/helm-chart.'
     required: false
     default: './'
-  chart-destination:
-    description: 'Target directory to use when saving the chart locally. ECR repositories save with the chart name without the ECR endpoint. Will save to <target-directory>/helm-chart.'
-    required: false
-    default: 'helm-chart'
   chart-version:
     description: 'Helm Chart version.'
     required: false
@@ -70,7 +66,6 @@ runs:
         BASE_CHART: ${{ inputs.base-chart }}
         CHART_VERSION: ${{ inputs.chart-version }}
         TARGET_DIRECTORY: ${{ inputs.target-directory }}
-        CHART_DESTINATION: ${{ inputs.chart-destination }}
       shell: bash
       run: ${{ github.action_path }}/helm-chart-pull-action.sh
 
@@ -79,7 +74,7 @@ runs:
       env:
         ADDITIONAL_ARGS: ${{inputs.additional-args }}
         ADDITIONAL_VALUES: ${{inputs.additional-values }}
-        HELM_CHART: "${{ inputs.target-directory }}${{ inputs.chart-destination }}"
+        HELM_CHART: "${{ steps.pull-chart.outputs.chart-path }}"
         NAMESPACE: ${{ inputs.namespace }}
         PRINT_TEMPLATE: ${{ inputs.print-template }}
         PROBLEMS_TIMEOUT: ${{ inputs.problems-timeout }}
