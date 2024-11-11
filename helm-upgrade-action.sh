@@ -80,12 +80,12 @@ VALUES_FILE=$(echo ${VALUES_FILE} | sed -r 's/[,]+/ -f /g')
 echo ${VALUES_FILE}
 
 if [[ ${PRINT_TEMPLATE} == "true" ]]; then
-    helm_template_cmd="helm template ${RELEASE_NAME} ${BASE_CHART} ${ADDITIONAL_ARGS} ${VALUES_FILE} --set ${ADDITIONAL_VALUES} -n ${NAMESPACE}"
+    helm_template_cmd="helm template ${RELEASE_NAME} ${HELM_CHART} ${ADDITIONAL_ARGS} ${VALUES_FILE} --set ${ADDITIONAL_VALUES} -n ${NAMESPACE}"
     echo $helm_template_cmd
     eval $helm_template_cmd
 fi
 
-helm_upgrade_cmd="helm upgrade --install ${RELEASE_NAME} ${BASE_CHART} ${ADDITIONAL_ARGS} ${VALUES_FILE} --set ${ADDITIONAL_VALUES} -n ${NAMESPACE}"
+helm_upgrade_cmd="helm upgrade --install ${RELEASE_NAME} ${HELM_CHART} ${ADDITIONAL_ARGS} ${VALUES_FILE} --set ${ADDITIONAL_VALUES} -n ${NAMESPACE}"
 echo $helm_upgrade_cmd
 if [[ -n ${PROBLEMS_TIMEOUT} ]]; then 
     show_problems &
