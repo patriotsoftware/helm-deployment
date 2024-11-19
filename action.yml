@@ -3,16 +3,6 @@ author: DevOps
 description: 'Pull a Helm chart from an OCI-compliant repository and save to a local directory. Then deploy to Kubernetes using that chart and a specified values file.'
 
 inputs:
-  aws-access-key-id:
-    description: 'The AWS Access key for authentication.'
-    required: true
-  aws-secret-access-key:
-    description: 'The AWS Secret key for authentication.'
-    required: true
-  aws-region:
-    description: 'Region used for ECR login.'
-    required: false
-    default: us-east-1
   base-chart:
     description: 'Chart to deploy the service with.'
     required: true
@@ -49,13 +39,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Authenticate with AWS
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ inputs.aws-access-key-id }}
-        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
-        aws-region: ${{ inputs.aws-region }}
-
     - name: Login to AWS ECR
       id: login-source-ecr
       uses: aws-actions/amazon-ecr-login@v2
