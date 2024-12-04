@@ -88,19 +88,16 @@ runs:
         else
           echo "helm-chart=${{ inputs.helm-base-chart }}" >> $GITHUB_OUTPUT
         fi
-
         if [[ "${{ inputs.helm-namespace }}" == "" ]]; then
           echo "helm-namespace=${{ inputs.release-name }}" >> $GITHUB_OUTPUT
         else
           echo "helm-namespace=${{ inputs.helm-namespace }}" >> $GITHUB_OUTPUT
         fi
-
         if [[ "${{ steps.core-values.outputs.branch }}" =~ (main|master) ]]; then
           echo "release=${{ inputs.release-name }}" >> $GITHUB_OUTPUT
         else
           echo "release=$(echo ${{ inputs.release-name }}-${{ steps.core-values.outputs.clean-branch }})" >> $GITHUB_OUTPUT
         fi
-
         if [ -f ${{ inputs.helm-values-file-directory }}/${{ steps.core-values.outputs.branch }}.${{ inputs.helm-values-file-name }} ]; then
           echo "Branch values file found"
           echo "values-file=${{ inputs.helm-values-file-directory }}/${{ inputs.helm-values-file-name }},${{ inputs.helm-values-file-directory }}/${{ steps.core-values.outputs.branch }}.${{ inputs.helm-values-file-name }}" >> $GITHUB_OUTPUT;
