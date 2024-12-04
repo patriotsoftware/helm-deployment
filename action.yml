@@ -3,35 +3,56 @@ author: DevOps
 description: 'Pull a Helm chart from an OCI-compliant repository and save to a local directory. Then deploy to Kubernetes using that chart and a specified values file.'
 
 inputs:
-  base-chart:
-    description: 'Chart to deploy the service with.'
+  # AWS Authentication
+  aws-access-key-id:
+    description: 'AWS Access Key ID to authenticate for deploying to ECR and the desired EKS cluster.'
     required: true
-  target-directory:
+  aws-secret-access-key:
+    description: 'AWS Secret Access Key to authenticate for deploying to ECR and the desired EKS cluster.'
+    required: true
+  aws-region:
+    description: 'Region used for ECR login.'
+    required: false
+    default: 'us-east-1'
+  # Helm Configuration
+  release-name:
+    description: 'Name of Helm Release. This is also used to build the ECR Repo name.'
+    required: true
+  helm-base-chart:
+    description: 'Chart to deploy the service with.'
+    required: false
+    default: 'monochart'
+  helm-target-directory:
     description: 'Target directory to save the chart to. This needs to be an empty directory so the chart can be specified automatically. Will save to ./helm-chart/<chart name>.'
     required: false
     default: './helm-chart/'
-  chart-version:
+  helm-chart-version:
     description: 'Helm Chart version.'
     required: false
-  release-name:
-    description: 'Name of Helm Release.'
-    required: true
-  namespace:
-    description: 'Kubernetes Namespace for the deployment.'
-    required: true
-  values-file:
-    description: 'Location of values file for helm chart.'
-    required: true
-  additional-values:
+  helm-namespace:
+    description: 'Kubernetes Namespace for the deployment. Default will use the same name as the release-name.'
+    required: false
+    default: ''
+  helm-values-file-directory:
+    description: 'The Director that holds the Helm Values file for the deployment. Default is "./deploy/helm".'
+    required: false
+    default: './deploy/helm'
+  helm-values-file-name:
+    description: 'The name of the Helm Values file for the Deployment. Default is "values.yaml".'
+    required: false
+    default: 'values.yaml'
+  helm-additional-values:
     description: 'Comma seperated string that contains extra values set for helm.'
     required: false
-  additional-args:
+  helm-additional-args:
     description: 'Handles inline options such as atomic, or timeout. By default, atomic is enabled.'
     required: false
-  problems-timeout:
+    default: '--atomic --timeout 2m30s'
+  helm-problems-timeout:
     description: 'Number of seconds to wait before checking potential issues (as an integer of seconds). Adding a value enables problem detection.'
     required: false
-  print-template:
+    default: '120'
+  helm-print-template:
     description: 'Allowed values are true/false. Determines whether or not to run "helm template" with the specified values. Defaults to true.'
     required: false
     default: 'true'
@@ -39,29 +60,79 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Extract Branch name and AWS Account ID
+      id: core-values
+      shell: bash
+      run: |
+        export UNESCAPED_BRANCH_NAME=${GITHUB_REF#refs/heads/}
+
+        echo "branch=$(echo ${UNESCAPED_BRANCH_NAME})" >> $GITHUB_OUTPUT
+        echo "clean-branch=$(echo ${UNESCAPED_BRANCH_NAME} | sed 's/_//g' | tr '[:upper:]' '[:lower:]' | cut -c -38)" >> $GITHUB_OUTPUT
+        echo "aws-account-id=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_OUTPUT
+
+    - name: Set Job Values
+      id: job-values
+      shell: bash
+      run: |
+        if [[ "${{ inputs.helm-base-chart }}" == "monochart" ]]; then
+          echo "helm-chart=${{ steps.core-values.outputs.aws-account-id }}.dkr.ecr.us-east-1.amazonaws.com/monochart" >> $GITHUB_OUTPUT
+        else
+          echo "helm-chart=${{ inputs.helm-base-chart }}" >> $GITHUB_OUTPUT
+        fi
+
+        if [[ "${{ inputs.helm-namespace }}" == "" ]]; then
+          echo "helm-namespace=${{ inputs.release-name }}" >> $GITHUB_OUTPUT
+        else
+          echo "helm-namespace=${{ inputs.helm-namespace }}" >> $GITHUB_OUTPUT
+        fi
+
+        if [[ "${{ steps.core-values.outputs.branch }}" =~ (main|master) ]]; then
+          echo "release=${{ inputs.release-name }}" >> $GITHUB_OUTPUT
+        else
+          echo "release=$(echo ${{ inputs.release-name }}-${{ steps.core-values.outputs.clean-branch }})" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Authenticate with AWS
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+        aws-region: ${{ inputs.aws-region }}
+
     - name: Login to AWS ECR
       id: login-source-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
+    - name: Check For Branch Values File
+      id: branch-values-file
+      shell: bash
+      run: |
+        if [ -f ${{ inputs.helm-values-file-directory }}/${{ steps.core-values.outputs.branch }}.${{ inputs.helm-values-file-name }} ]; then
+          echo "Branch values file found"
+          echo "values-file=${{ inputs.helm-values-file-directory }}/${{ inputs.helm-values-file-name }},${{ inputs.helm-values-file-directory }}/${{ steps.core-values.outputs.branch }}.${{ inputs.helm-values-file-name }}" >> $GITHUB_OUTPUT;
+        else
+          echo "values-file=${{ inputs.helm-values-file-directory }}/${{ inputs.helm-values-file-name }}" >> $GITHUB_OUTPUT;
+        fi
+
     - name: Pull Helm Chart
       id: pull-chart
       env:
-        BASE_CHART: ${{ inputs.base-chart }}
-        CHART_VERSION: ${{ inputs.chart-version }}
-        TARGET_DIRECTORY: ${{ inputs.target-directory }}
+        BASE_CHART: ${{ steps.job-values.outputs.helm-chart }}
+        CHART_VERSION: ${{ inputs.helm-chart-version }}
+        TARGET_DIRECTORY: ${{ inputs.helm-target-directory }}
       shell: bash
       run: ${{ github.action_path }}/helm-chart-pull-action.sh
 
     - name: Install/Upgrade Helm Chart
       id: helm-upgrade-action
       env:
-        ADDITIONAL_ARGS: ${{inputs.additional-args }}
-        ADDITIONAL_VALUES: ${{inputs.additional-values }}
+        ADDITIONAL_ARGS: ${{ inputs.helm-additional-args }}
+        ADDITIONAL_VALUES: ${{ inputs.helm-additional-values }}
         HELM_CHART: "${{ steps.pull-chart.outputs.chart-path }}"
-        NAMESPACE: ${{ inputs.namespace }}
-        PRINT_TEMPLATE: ${{ inputs.print-template }}
-        PROBLEMS_TIMEOUT: ${{ inputs.problems-timeout }}
-        RELEASE_NAME: ${{ inputs.release-name }}
-        VALUES_FILE: ${{ inputs.values-file }}
+        NAMESPACE: ${{ steps.job-values.outputs.helm-namespace }}
+        PRINT_TEMPLATE: ${{ inputs.helm-print-template }}
+        PROBLEMS_TIMEOUT: ${{ inputs.helm-problems-timeout }}
+        RELEASE_NAME: ${{ steps.job-values.outputs.release }}
+        VALUES_FILE: ${{ steps.branch-values-file.outputs.values-file }}
       shell: bash
       run: ${{ github.action_path }}/helm-upgrade-action.sh
