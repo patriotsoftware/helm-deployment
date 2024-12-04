@@ -14,6 +14,15 @@ inputs:
     description: 'Region used for ECR login.'
     required: false
     default: 'us-east-1'
+  # CDK Configuration
+  deploy-cdk:
+    description: 'Determine to deploy CDK or not. Default is "false".'
+    required: false
+    default: 'false'
+  cdk-directory:
+    description: 'The directory to deploy CDK from. Default is "deploy".'
+    required: false
+    default: 'deploy'
   # Helm Configuration
   release-name:
     description: 'Name of Helm Release. This is also used to build the ECR Repo name.'
@@ -92,6 +101,13 @@ runs:
           echo "release=$(echo ${{ inputs.release-name }}-${{ steps.core-values.outputs.clean-branch }})" >> $GITHUB_OUTPUT
         fi
 
+        if [ -f ${{ inputs.helm-values-file-directory }}/${{ steps.core-values.outputs.branch }}.${{ inputs.helm-values-file-name }} ]; then
+          echo "Branch values file found"
+          echo "values-file=${{ inputs.helm-values-file-directory }}/${{ inputs.helm-values-file-name }},${{ inputs.helm-values-file-directory }}/${{ steps.core-values.outputs.branch }}.${{ inputs.helm-values-file-name }}" >> $GITHUB_OUTPUT;
+        else
+          echo "values-file=${{ inputs.helm-values-file-directory }}/${{ inputs.helm-values-file-name }}" >> $GITHUB_OUTPUT;
+        fi
+
     - name: Authenticate with AWS
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -103,16 +119,17 @@ runs:
       id: login-source-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Check For Branch Values File
-      id: branch-values-file
+    - name: Deploy CDK
+      if: ${{ inputs.deploy-cdk == 'true' }}
+      env:
+        AWS_ACCOUNT_ID: ${{ steps.core-values.outputs.aws-account-id }}
+        AWS_REGION: ${{ inputs.aws-region }}
+        BRANCH_NAME: ${{ steps.core-values.outputs.branch }}
+        BRANCH_DATABASE: ${{ steps.core-values.outputs.branch }}
       shell: bash
       run: |
-        if [ -f ${{ inputs.helm-values-file-directory }}/${{ steps.core-values.outputs.branch }}.${{ inputs.helm-values-file-name }} ]; then
-          echo "Branch values file found"
-          echo "values-file=${{ inputs.helm-values-file-directory }}/${{ inputs.helm-values-file-name }},${{ inputs.helm-values-file-directory }}/${{ steps.core-values.outputs.branch }}.${{ inputs.helm-values-file-name }}" >> $GITHUB_OUTPUT;
-        else
-          echo "values-file=${{ inputs.helm-values-file-directory }}/${{ inputs.helm-values-file-name }}" >> $GITHUB_OUTPUT;
-        fi
+        cd ${{ inputs.cdk-directory }}
+        cdk deploy --require-approval never
 
     - name: Pull Helm Chart
       id: pull-chart
@@ -133,6 +150,6 @@ runs:
         PRINT_TEMPLATE: ${{ inputs.helm-print-template }}
         PROBLEMS_TIMEOUT: ${{ inputs.helm-problems-timeout }}
         RELEASE_NAME: ${{ steps.job-values.outputs.release }}
-        VALUES_FILE: ${{ steps.branch-values-file.outputs.values-file }}
+        VALUES_FILE: ${{ steps.job-values.outputs.values-file }}
       shell: bash
       run: ${{ github.action_path }}/helm-upgrade-action.sh
