@@ -69,6 +69,13 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Authenticate with AWS
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+        aws-region: ${{ inputs.aws-region }}
+
     - name: Extract Branch name and AWS Account ID
       id: core-values
       shell: bash
@@ -104,13 +111,6 @@ runs:
         else
           echo "values-file=${{ inputs.helm-values-file-directory }}/${{ inputs.helm-values-file-name }}" >> $GITHUB_OUTPUT;
         fi
-
-    - name: Authenticate with AWS
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ inputs.aws-access-key-id }}
-        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
-        aws-region: ${{ inputs.aws-region }}
 
     - name: Login to AWS ECR
       id: login-source-ecr
